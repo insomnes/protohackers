@@ -74,7 +74,10 @@ func PrimeHandler(conn net.Conn) {
 	for {
 		conn.SetReadDeadline(time.Now().Add(ConnTO))
 		msg, err := reader.ReadBytes(byte('\n'))
-		fmt.Println("Got message:", string(msg[:len(msg)-1]))
+
+		if len(msg) > 1 {
+			fmt.Println("Got message:", string(msg[:len(msg)-1]))
+		}
 
 		if err != nil && err.Error() == "EOF" {
 			fmt.Println("Connection closed by client")
