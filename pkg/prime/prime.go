@@ -12,13 +12,20 @@ import (
 
 type Input struct {
 	Method string `json:"method"`
-	Number *int   `json:"number"`
+	Number *uint  `json:"number"`
 }
 
 func isFloatError(err error) bool {
 	if typeErr, ok := err.(*json.UnmarshalTypeError); ok &&
-		strings.Contains(typeErr.Value, "number") &&
 		strings.Contains(typeErr.Value, ".") {
+		return true
+	}
+	return false
+}
+
+func isNumberError(err error) bool {
+	if typeErr, ok := err.(*json.UnmarshalTypeError); ok &&
+		strings.Contains(typeErr.Value, "number") {
 		return true
 	}
 	return false
@@ -28,10 +35,14 @@ func parseInput(buffer []byte) (Input, error) {
 	var input Input
 	err := json.Unmarshal(buffer, &input)
 	if err != nil {
+		// Big numbers will give 0, and non-prime
+		if !isNumberError(err) {
+			return input, fmt.Errorf("invalid")
+		}
 		if isFloatError(err) {
 			return input, fmt.Errorf("float")
 		}
-		return input, fmt.Errorf("invalid")
+		fmt.Fprintln(os.Stderr, "Possibly too big number in:", err)
 	}
 	if input.Method != "isPrime" {
 		return input, fmt.Errorf("not-prime")
@@ -42,7 +53,7 @@ func parseInput(buffer []byte) (Input, error) {
 	return input, nil
 }
 
-func isPrime(n int) bool {
+func isPrime(n uint) bool {
 	if n <= 1 {
 		return false
 	}
@@ -53,7 +64,8 @@ func isPrime(n int) bool {
 		return false
 	}
 
-	for i := 5; i*i <= n; i += 6 {
+	var i uint
+	for i = 5; i*i <= n; i += 6 {
 		if n%i == 0 || n%(i+2) == 0 {
 			return false
 		}
@@ -113,10 +125,10 @@ func PrimeHandler(conn net.Conn) {
 
 		conn.SetWriteDeadline(time.Now().Add(ConnTO))
 		if inputIsPrime {
-			fmt.Println("Got prime number:", input.Number)
+			fmt.Println("Got prime number:", *input.Number)
 			conn.Write([]byte(trueResponse))
 		} else {
-			fmt.Println("Got non-prime number:", input.Number)
+			fmt.Println("Got non-prime number:", *input.Number)
 			conn.Write([]byte(falseResponse))
 		}
 	}
