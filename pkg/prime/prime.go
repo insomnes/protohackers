@@ -3,7 +3,6 @@ package prime
 import (
 	"encoding/json"
 	"fmt"
-	"math"
 	"net"
 	"os"
 	"strings"
@@ -49,7 +48,8 @@ func isPrime(n int) bool {
 	if n%2 == 0 || n%3 == 0 {
 		return false
 	}
-	for i := 5; i <= int(math.Sqrt(float64(n))); i += 6 {
+
+	for i := 5; i*i <= n; i += 6 {
 		if n%i == 0 || n%(i+2) == 0 {
 			return false
 		}
@@ -98,6 +98,7 @@ func PrimeHandler(conn net.Conn) {
 			}
 			continue
 		}
+		fmt.Println("Got input:", input)
 		if isPrime(input.Number) {
 			fmt.Println("Got prime number:", input.Number)
 			conn.Write([]byte(trueResponse))
