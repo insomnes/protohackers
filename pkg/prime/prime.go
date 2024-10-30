@@ -61,8 +61,9 @@ func isPrime(n int) bool {
 const ConnTO time.Duration = time.Second * 30
 
 const (
-	falseResponse string = `{"method":"isPrime","prime":false}` + "\n"
-	trueResponse  string = `{"method":"isPrime","prime":true}` + "\n"
+	malformedResponse string = "{}\n"
+	falseResponse     string = `{"method":"isPrime","prime":false}` + "\n"
+	trueResponse      string = `{"method":"isPrime","prime":true}` + "\n"
 )
 
 func PrimeHandler(conn net.Conn) {
@@ -73,7 +74,7 @@ func PrimeHandler(conn net.Conn) {
 	for {
 		conn.SetReadDeadline(time.Now().Add(ConnTO))
 		msg, err := reader.ReadBytes(byte('\n'))
-		fmt.Println("Got message:", string(msg))
+		fmt.Println("Got message:", string(msg[:len(msg)-1]))
 
 		if err != nil && err.Error() == "EOF" {
 			fmt.Println("Connection closed by client")
@@ -89,10 +90,10 @@ func PrimeHandler(conn net.Conn) {
 			switch err.Error() {
 			case "invalid":
 				fmt.Fprintln(os.Stderr, "Invalid json")
-				conn.Write([]byte("{}"))
+				conn.Write([]byte(malformedResponse))
 			case "not-prime":
 				fmt.Fprintln(os.Stderr, "Invalid method")
-				conn.Write([]byte("{}"))
+				conn.Write([]byte(malformedResponse))
 			case "float":
 				fmt.Fprintln(os.Stderr, "Invalid number")
 				conn.Write([]byte(falseResponse))
