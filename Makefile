@@ -6,3 +6,6 @@ build:
 
 echo: build
 	./bin/protohackers --handler=echo --host=$(HOST) --port=$(PORT)
+
+prime: build
+	./bin/protohackers --handler=prime --host=$(HOST) --port=$(PORT)

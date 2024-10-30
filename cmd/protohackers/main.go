@@ -7,6 +7,7 @@ import (
 	"os"
 
 	"github.com/insomnes/protohackers/pkg/echo"
+	"github.com/insomnes/protohackers/pkg/prime"
 )
 
 func RunServer(addr string, connHandler func(conn net.Conn)) error {
@@ -33,6 +34,8 @@ func GetHandler(handle string) (func(conn net.Conn), error) {
 	switch handle {
 	case "echo":
 		return echo.EchoHandler, nil
+	case "prime":
+		return prime.PrimeHandler, nil
 	default:
 		return nil, fmt.Errorf("unknown handler: %s", handle)
 	}
