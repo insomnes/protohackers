@@ -58,7 +58,7 @@ func isPrime(n int) bool {
 	return true
 }
 
-const ConnTO time.Duration = time.Second * 5
+const ConnTO time.Duration = time.Second * 30
 
 const (
 	falseResponse string = `{"method":"isPrime","prime":false}`
