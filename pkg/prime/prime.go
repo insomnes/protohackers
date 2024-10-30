@@ -12,7 +12,7 @@ import (
 
 type Input struct {
 	Method string `json:"method"`
-	Number int    `json:"number"`
+	Number *int   `json:"number"`
 }
 
 func isFloatError(err error) bool {
@@ -35,6 +35,9 @@ func parseInput(buffer []byte) (Input, error) {
 	}
 	if input.Method != "isPrime" {
 		return input, fmt.Errorf("not-prime")
+	}
+	if input.Number == nil {
+		return input, fmt.Errorf("invalid")
 	}
 	return input, nil
 }
@@ -100,10 +103,13 @@ func PrimeHandler(conn net.Conn) {
 			case "float":
 				fmt.Fprintln(os.Stderr, "Invalid number")
 				conn.Write([]byte(falseResponse))
+			default:
+				fmt.Fprintln(os.Stderr, "Other error", err)
+				conn.Write([]byte(malformedResponse))
 			}
 			continue
 		}
-		inputIsPrime := isPrime(input.Number)
+		inputIsPrime := isPrime(*input.Number)
 
 		conn.SetWriteDeadline(time.Now().Add(ConnTO))
 		if inputIsPrime {
