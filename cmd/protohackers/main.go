@@ -6,7 +6,7 @@ import (
 	"net"
 	"os"
 
-	echo "github.com/insomnes/protohackers/pkg/echo"
+	"github.com/insomnes/protohackers/pkg/echo"
 )
 
 func RunServer(addr string, connHandler func(conn net.Conn)) error {
