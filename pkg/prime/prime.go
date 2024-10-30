@@ -72,6 +72,7 @@ func PrimeHandler(conn net.Conn) {
 	for {
 		conn.SetReadDeadline(time.Now().Add(ConnTO))
 		n, err := conn.Read(buffer)
+		fmt.Println("Got input:", string(buffer[:n]))
 
 		if err != nil && err.Error() == "EOF" {
 			fmt.Println("Connection closed by client")
@@ -81,7 +82,6 @@ func PrimeHandler(conn net.Conn) {
 			fmt.Fprintln(os.Stderr, "Error reading from conn: %w", err)
 			return
 		}
-		conn.SetWriteDeadline(time.Now().Add(ConnTO))
 
 		input, err := parseInput(buffer[:n])
 		if err != nil {
@@ -98,8 +98,10 @@ func PrimeHandler(conn net.Conn) {
 			}
 			continue
 		}
-		fmt.Println("Got input:", input)
-		if isPrime(input.Number) {
+		inputIsPrime := isPrime(input.Number)
+
+		conn.SetWriteDeadline(time.Now().Add(ConnTO))
+		if inputIsPrime {
 			fmt.Println("Got prime number:", input.Number)
 			conn.Write([]byte(trueResponse))
 		} else {
