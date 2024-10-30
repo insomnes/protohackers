@@ -99,8 +99,10 @@ func PrimeHandler(conn net.Conn) {
 			continue
 		}
 		if isPrime(input.Number) {
+			fmt.Println("Got prime number:", input.Number)
 			conn.Write([]byte(trueResponse))
 		} else {
+			fmt.Println("Got non-prime number:", input.Number)
 			conn.Write([]byte(falseResponse))
 		}
 	}
