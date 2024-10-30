@@ -23,7 +23,7 @@ func EchoHandler(conn net.Conn) {
 			return
 		}
 		if err != nil {
-			fmt.Fprintln(os.Stderr, "Error reading from conn: %w", err)
+			fmt.Fprintln(os.Stderr, "Error reading from conn:", err)
 			return
 		}
 		conn.SetWriteDeadline(time.Now().Add(ConnTO))

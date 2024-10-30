@@ -49,13 +49,13 @@ func main() {
 
 	handlerFunc, err := GetHandler(*handler)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "Error getting handler: %w", err)
+		fmt.Fprintln(os.Stderr, "Error getting handler:", err)
 		os.Exit(1)
 	}
 
 	fullAddr := fmt.Sprintf("%s:%d", *host, *port)
 	if err := RunServer(fullAddr, handlerFunc); err != nil {
-		fmt.Fprintln(os.Stderr, "Error running server: %w", err)
+		fmt.Fprintln(os.Stderr, "Error running server:", err)
 		os.Exit(1)
 	}
 	fmt.Println("Server stopped")

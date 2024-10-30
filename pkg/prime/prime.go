@@ -1,6 +1,7 @@
 package prime
 
 import (
+	"bufio"
 	"encoding/json"
 	"fmt"
 	"net"
@@ -60,30 +61,30 @@ func isPrime(n int) bool {
 const ConnTO time.Duration = time.Second * 30
 
 const (
-	falseResponse string = `{"method":"isPrime","prime":false}`
-	trueResponse  string = `{"method":"isPrime","prime":true}`
+	falseResponse string = `{"method":"isPrime","prime":false}` + "\n"
+	trueResponse  string = `{"method":"isPrime","prime":true}` + "\n"
 )
 
 func PrimeHandler(conn net.Conn) {
 	fmt.Println("Handling connection from", conn.RemoteAddr())
 	defer conn.Close()
+	reader := bufio.NewReader(conn)
 
-	buffer := make([]byte, 1024)
 	for {
 		conn.SetReadDeadline(time.Now().Add(ConnTO))
-		n, err := conn.Read(buffer)
-		fmt.Println("Got input:", string(buffer[:n]))
+		msg, err := reader.ReadBytes(byte('\n'))
+		fmt.Println("Got message:", string(msg))
 
 		if err != nil && err.Error() == "EOF" {
 			fmt.Println("Connection closed by client")
 			return
 		}
 		if err != nil {
-			fmt.Fprintln(os.Stderr, "Error reading from conn: %w", err)
+			fmt.Fprintln(os.Stderr, "Error reading from conn: ", err)
 			return
 		}
 
-		input, err := parseInput(buffer[:n])
+		input, err := parseInput(msg)
 		if err != nil {
 			switch err.Error() {
 			case "invalid":
