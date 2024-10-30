@@ -1,7 +1,6 @@
 package prime
 
 import (
-	"bufio"
 	"encoding/json"
 	"fmt"
 	"math"
@@ -69,10 +68,10 @@ func PrimeHandler(conn net.Conn) {
 	fmt.Println("Handling connection from", conn.RemoteAddr())
 	defer conn.Close()
 
+	buffer := make([]byte, 1024)
 	for {
 		conn.SetReadDeadline(time.Now().Add(ConnTO))
-		reader := bufio.NewReader(conn)
-		msg, err := reader.ReadBytes('\n')
+		n, err := conn.Read(buffer)
 
 		if err != nil && err.Error() == "EOF" {
 			fmt.Println("Connection closed by client")
@@ -84,7 +83,7 @@ func PrimeHandler(conn net.Conn) {
 		}
 		conn.SetWriteDeadline(time.Now().Add(ConnTO))
 
-		input, err := parseInput(msg)
+		input, err := parseInput(buffer[:n])
 		if err != nil {
 			switch err.Error() {
 			case "invalid":
