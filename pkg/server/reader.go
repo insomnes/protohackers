@@ -41,6 +41,6 @@ func readLine(r *bufio.Reader) ([]byte, error) {
 
 func readBuff(r *bufio.Reader) ([]byte, error) {
 	msg := make([]byte, 4096)
-	_, err := r.Read(msg)
-	return msg, err
+	n, err := r.Read(msg)
+	return msg[:n], err
 }
