@@ -1,6 +1,7 @@
 package server
 
 import (
+	"bufio"
 	"fmt"
 	"net"
 	"os"
@@ -53,11 +54,10 @@ func (s *Server) Run() error {
 func (s *Server) handleConnection(conn net.Conn) {
 	fmt.Println("Handling connection from", conn.RemoteAddr())
 	defer conn.Close()
-
-	buffer := make([]byte, 1024)
+	reader := bufio.NewReader(conn)
 	for {
 		conn.SetReadDeadline(time.Now().Add(s.ReadTimeout))
-		n, err := conn.Read(buffer)
+		msg, err := reader.ReadBytes('\n')
 
 		if err != nil && err.Error() == "EOF" {
 			fmt.Println("Connection closed by client")
@@ -67,7 +67,6 @@ func (s *Server) handleConnection(conn net.Conn) {
 			fmt.Fprintln(os.Stderr, "Error reading from conn:", err)
 			return
 		}
-		msg := buffer[:n]
 		resp := s.handlerFunc(msg, s.Verbose)
 		// Nothing to do case
 		if resp == nil {
