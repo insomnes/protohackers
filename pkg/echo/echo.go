@@ -4,7 +4,9 @@ import (
 	"fmt"
 )
 
-func EchoHandler(msg []byte) []byte {
-	fmt.Println("Echoing message:", string(msg))
+func EchoHandler(msg []byte, verbose bool) []byte {
+	if verbose {
+		fmt.Print("Echoing message: ", string(msg))
+	}
 	return msg
 }

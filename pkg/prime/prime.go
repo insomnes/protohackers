@@ -79,9 +79,9 @@ var (
 	trueResponse      []byte = []byte(`{"method":"isPrime","prime":true}` + "\n")
 )
 
-func PrimeHandler(msg []byte) []byte {
-	if len(msg) > 1 {
-		fmt.Println("Prime message:", string(msg[:len(msg)-1]))
+func PrimeHandler(msg []byte, verbose bool) []byte {
+	if len(msg) > 1 && verbose {
+		fmt.Print("Prime message: ", string(msg))
 	}
 
 	input, err := parseInput(msg)
@@ -104,10 +104,13 @@ func PrimeHandler(msg []byte) []byte {
 	inputIsPrime := isPrime(*input.Number)
 
 	if !inputIsPrime {
-		fmt.Println("Got non-prime number:", *input.Number)
+		if verbose {
+			fmt.Println("Got non-prime number:", *input.Number)
+		}
 		return falseResponse
 	}
-
-	fmt.Println("Got prime number:", *input.Number)
+	if verbose {
+		fmt.Println("Got prime number:", *input.Number)
+	}
 	return trueResponse
 }

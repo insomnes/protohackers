@@ -9,18 +9,19 @@ import (
 	"github.com/insomnes/protohackers/pkg/config"
 )
 
+type HandlerFunc func(msg []byte, verbose bool) []byte
+
 type Server struct {
 	config.ServerConfig
-	handlerFunc func(msg []byte) []byte
+	handlerFunc HandlerFunc
 	addr        string
 }
 
 func NewServer(
 	cfg config.ServerConfig,
-	handlerFunc func(msg []byte) []byte,
+	handlerFunc HandlerFunc,
 ) Server {
 	addr := fmt.Sprintf("%s:%d", cfg.Host, cfg.Port)
-	fmt.Println("Creating server on", addr)
 	return Server{
 		ServerConfig: cfg,
 		handlerFunc:  handlerFunc,
@@ -67,7 +68,7 @@ func (s *Server) handleConnection(conn net.Conn) {
 			return
 		}
 		msg := buffer[:n]
-		resp := s.handlerFunc(msg)
+		resp := s.handlerFunc(msg, s.Verbose)
 		// Nothing to do case
 		if resp == nil {
 			return

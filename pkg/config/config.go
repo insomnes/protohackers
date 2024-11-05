@@ -20,6 +20,7 @@ type ServerConfig struct {
 	Handler      string
 	ReadTimeout  time.Duration
 	WriteTimeout time.Duration
+	Verbose      bool
 }
 
 func ParseConfig() ServerConfig {
@@ -28,6 +29,7 @@ func ParseConfig() ServerConfig {
 	handler := flag.String("handler", DefaultHandler, "handler to use")
 	readTimeout := flag.Uint("read-timeout", DefaultReadTimeout, "read timeout")
 	writeTimeout := flag.Uint("write-timeout", DefaultWriteTimeout, "write timeout")
+	verbose := flag.Bool("verbose", false, "verbose output")
 	flag.Parse()
 
 	if *port < 1 || *port > 65535 {
@@ -46,5 +48,6 @@ func ParseConfig() ServerConfig {
 		Handler:      *handler,
 		ReadTimeout:  time.Duration(*readTimeout) * time.Second,
 		WriteTimeout: time.Duration(*writeTimeout) * time.Second,
+		Verbose:      *verbose,
 	}
 }

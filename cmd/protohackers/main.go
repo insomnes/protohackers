@@ -10,7 +10,7 @@ import (
 	"github.com/insomnes/protohackers/pkg/server"
 )
 
-func GetHandlerFunction(handle string) (func(msg []byte) []byte, error) {
+func GetHandlerFunction(handle string) (server.HandlerFunc, error) {
 	switch handle {
 	case "echo":
 		return echo.EchoHandler, nil
@@ -30,7 +30,6 @@ func main() {
 	}
 
 	server := server.NewServer(cfg, handlerFunc)
-	fmt.Println("Server created")
 
 	if err := server.Run(); err != nil {
 		fmt.Fprintln(os.Stderr, "Error running server:", err)
