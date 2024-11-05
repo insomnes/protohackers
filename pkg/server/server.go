@@ -1,7 +1,6 @@
 package server
 
 import (
-	"bufio"
 	"fmt"
 	"net"
 	"os"
@@ -10,23 +9,28 @@ import (
 	"github.com/insomnes/protohackers/pkg/config"
 )
 
-type HandlerFunc func(msg []byte, verbose bool) []byte
+type Handler interface {
+	HandleMessage(msg []byte, verbose bool, remote string) ([]byte, error)
+}
 
 type Server struct {
 	config.ServerConfig
-	handlerFunc HandlerFunc
-	addr        string
+	addr       string
+	handler    Handler
+	readerType ReaderType
 }
 
 func NewServer(
 	cfg config.ServerConfig,
-	handlerFunc HandlerFunc,
+	handler Handler,
+	readerType ReaderType,
 ) Server {
 	addr := fmt.Sprintf("%s:%d", cfg.Host, cfg.Port)
 	return Server{
 		ServerConfig: cfg,
-		handlerFunc:  handlerFunc,
 		addr:         addr,
+		handler:      handler,
+		readerType:   readerType,
 	}
 }
 
@@ -52,24 +56,25 @@ func (s *Server) Run() error {
 }
 
 func (s *Server) handleConnection(conn net.Conn) {
-	fmt.Println("Handling connection from", conn.RemoteAddr())
+	remote := conn.RemoteAddr().String()
+	fmt.Println("Handling connection from", remote)
 	defer conn.Close()
-	reader := bufio.NewReader(conn)
+	reader := NewMsgReader(conn, s.readerType)
 	for {
 		conn.SetReadDeadline(time.Now().Add(s.ReadTimeout))
-		msg, err := reader.ReadBytes('\n')
-
-		if err != nil && err.Error() == "EOF" {
-			fmt.Println("Connection closed by client")
-			return
-		}
+		msg, err := reader.ReadMessage()
 		if err != nil {
-			fmt.Fprintln(os.Stderr, "Error reading from conn:", err)
+			switch err.Error() {
+			case "EOF":
+				fmt.Println("Connection closed by client")
+			default:
+				fmt.Fprintln(os.Stderr, "Error reading from conn:", err)
+			}
 			return
 		}
-		resp := s.handlerFunc(msg, s.Verbose)
-		// Nothing to do case
-		if resp == nil {
+		resp, err := s.handler.HandleMessage(msg, s.Verbose, remote)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, "Error handling message:", err)
 			return
 		}
 

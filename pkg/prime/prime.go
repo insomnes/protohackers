@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"strings"
-	"time"
 )
 
 type Input struct {
@@ -71,15 +70,15 @@ func isPrime(n uint) bool {
 	return true
 }
 
-const ConnTO time.Duration = time.Second * 30
-
 var (
 	malformedResponse []byte = []byte("{}\n")
 	falseResponse     []byte = []byte(`{"method":"isPrime","prime":false}` + "\n")
 	trueResponse      []byte = []byte(`{"method":"isPrime","prime":true}` + "\n")
 )
 
-func PrimeHandler(msg []byte, verbose bool) []byte {
+type PrimeHandler struct{}
+
+func (ph *PrimeHandler) HandleMessage(msg []byte, verbose bool, remote string) ([]byte, error) {
 	if len(msg) > 1 && verbose {
 		fmt.Print("Prime message: ", string(msg))
 	}
@@ -89,16 +88,16 @@ func PrimeHandler(msg []byte, verbose bool) []byte {
 		switch err.Error() {
 		case "invalid":
 			fmt.Fprintln(os.Stderr, "Invalid json")
-			return malformedResponse
+			return malformedResponse, nil
 		case "not-prime":
 			fmt.Fprintln(os.Stderr, "Invalid method")
-			return malformedResponse
+			return malformedResponse, nil
 		case "float":
 			fmt.Fprintln(os.Stderr, "Invalid number")
-			return falseResponse
+			return falseResponse, nil
 		default:
 			fmt.Fprintln(os.Stderr, "Other error", err)
-			return malformedResponse
+			return malformedResponse, nil
 		}
 	}
 	inputIsPrime := isPrime(*input.Number)
@@ -107,10 +106,10 @@ func PrimeHandler(msg []byte, verbose bool) []byte {
 		if verbose {
 			fmt.Println("Got non-prime number:", *input.Number)
 		}
-		return falseResponse
+		return falseResponse, nil
 	}
 	if verbose {
 		fmt.Println("Got prime number:", *input.Number)
 	}
-	return trueResponse
+	return trueResponse, nil
 }

@@ -10,26 +10,30 @@ import (
 	"github.com/insomnes/protohackers/pkg/server"
 )
 
-func GetHandlerFunction(handle string) (server.HandlerFunc, error) {
-	switch handle {
-	case "echo":
-		return echo.EchoHandler, nil
-	case "prime":
-		return prime.PrimeHandler, nil
-	default:
-		return nil, fmt.Errorf("unknown handler: %s", handle)
-	}
+var handlers = map[string]server.Handler{
+	"echo":  &echo.EchoHandler{},
+	"prime": &prime.PrimeHandler{},
+}
+
+var readerTypes = map[string]server.ReaderType{
+	"echo":  server.ReaderTypeBuff,
+	"prime": server.ReaderTypeLine,
 }
 
 func main() {
 	cfg := config.ParseConfig()
-	handlerFunc, err := GetHandlerFunction(cfg.Handler)
-	if err != nil {
-		fmt.Fprintln(os.Stderr, "Error getting handler:", err)
+	handler, ok := handlers[cfg.Handler]
+	if !ok {
+		fmt.Fprintln(os.Stderr, "Unknown handler:", cfg.Handler)
+		os.Exit(1)
+	}
+	readerType, ok := readerTypes[cfg.Handler]
+	if !ok {
+		fmt.Fprintln(os.Stderr, "Unknown reader type for handler:", cfg.Handler)
 		os.Exit(1)
 	}
 
-	server := server.NewServer(cfg, handlerFunc)
+	server := server.NewServer(cfg, handler, readerType)
 
 	if err := server.Run(); err != nil {
 		fmt.Fprintln(os.Stderr, "Error running server:", err)
