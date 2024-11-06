@@ -7,27 +7,36 @@ import (
 	"time"
 
 	"github.com/insomnes/protohackers/pkg/config"
-	"github.com/insomnes/protohackers/pkg/handlers"
 )
+
+type ConnHandler interface {
+	GetMsgHandler(conn net.Conn, verbose bool) MsgHandler
+	GetReader(conn net.Conn) MsgReader
+}
+
+type MsgHandler interface {
+	HandleMessage(msg []byte) ([]byte, error)
+}
+
+type MsgReader interface {
+	ReadMessage() ([]byte, error)
+}
 
 type Server struct {
 	config.ServerConfig
-	addr       string
-	handler    handlers.Handler
-	readerType ReaderType
+	addr    string
+	handler ConnHandler
 }
 
 func NewServer(
 	cfg config.ServerConfig,
-	handler handlers.Handler,
-	readerType ReaderType,
+	handler ConnHandler,
 ) Server {
 	addr := fmt.Sprintf("%s:%d", cfg.Host, cfg.Port)
 	return Server{
 		ServerConfig: cfg,
 		addr:         addr,
 		handler:      handler,
-		readerType:   readerType,
 	}
 }
 
@@ -56,7 +65,9 @@ func (s *Server) handleConnection(conn net.Conn) {
 	remote := conn.RemoteAddr().String()
 	fmt.Println("Handling connection from", remote)
 	defer conn.Close()
-	reader := NewMsgReader(conn, s.readerType)
+
+	reader := s.handler.GetReader(conn)
+	handler := s.handler.GetMsgHandler(conn, s.Verbose)
 	for {
 		conn.SetReadDeadline(time.Now().Add(s.ReadTimeout))
 		msg, err := reader.ReadMessage()
@@ -69,7 +80,7 @@ func (s *Server) handleConnection(conn net.Conn) {
 			}
 			return
 		}
-		resp, err := s.handler.HandleMessage(msg, s.Verbose, remote)
+		resp, err := handler.HandleMessage(msg)
 		if err != nil {
 			fmt.Fprintln(os.Stderr, "Error handling message:", err)
 			return

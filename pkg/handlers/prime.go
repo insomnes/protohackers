@@ -3,8 +3,11 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
+	"net"
 	"os"
 	"strings"
+
+	"github.com/insomnes/protohackers/pkg/server"
 )
 
 type Input struct {
@@ -78,8 +81,21 @@ var (
 
 type PrimeHandler struct{}
 
-func (ph *PrimeHandler) HandleMessage(msg []byte, verbose bool, remote string) ([]byte, error) {
-	if len(msg) > 1 && verbose {
+func (ph *PrimeHandler) GetReader(conn net.Conn) server.MsgReader {
+	reader := NewLineReader(conn)
+	return &reader
+}
+
+func (ph *PrimeHandler) GetMsgHandler(conn net.Conn, verbose bool) server.MsgHandler {
+	return &PrimeMessageHandler{verbose: verbose}
+}
+
+type PrimeMessageHandler struct {
+	verbose bool
+}
+
+func (pmh *PrimeMessageHandler) HandleMessage(msg []byte) ([]byte, error) {
+	if len(msg) > 1 && pmh.verbose {
 		fmt.Print("Prime message: ", string(msg))
 	}
 
@@ -103,12 +119,12 @@ func (ph *PrimeHandler) HandleMessage(msg []byte, verbose bool, remote string) (
 	inputIsPrime := isPrime(*input.Number)
 
 	if !inputIsPrime {
-		if verbose {
+		if pmh.verbose {
 			fmt.Println("Got non-prime number:", *input.Number)
 		}
 		return falseResponse, nil
 	}
-	if verbose {
+	if pmh.verbose {
 		fmt.Println("Got prime number:", *input.Number)
 	}
 	return trueResponse, nil

@@ -9,15 +9,9 @@ import (
 	"github.com/insomnes/protohackers/pkg/server"
 )
 
-var handlerMap = map[string]handlers.Handler{
+var handlerMap = map[string]server.ConnHandler{
 	"echo":  &handlers.EchoHandler{},
 	"prime": &handlers.PrimeHandler{},
-}
-
-var readerMap = map[string]server.ReaderType{
-	"echo":  server.ReaderTypeBuff,
-	"prime": server.ReaderTypeLine,
-	"means": server.ReaderTypeNineBytes,
 }
 
 func main() {
@@ -27,13 +21,8 @@ func main() {
 		fmt.Fprintln(os.Stderr, "Unknown handler:", cfg.Handler)
 		os.Exit(1)
 	}
-	readerType, ok := readerMap[cfg.Handler]
-	if !ok {
-		fmt.Fprintln(os.Stderr, "Unknown reader type for handler:", cfg.Handler)
-		os.Exit(1)
-	}
 
-	server := server.NewServer(cfg, handler, readerType)
+	server := server.NewServer(cfg, handler)
 
 	if err := server.Run(); err != nil {
 		fmt.Fprintln(os.Stderr, "Error running server:", err)
