@@ -7,22 +7,19 @@ import (
 	"time"
 
 	"github.com/insomnes/protohackers/pkg/config"
+	"github.com/insomnes/protohackers/pkg/handlers"
 )
-
-type Handler interface {
-	HandleMessage(msg []byte, verbose bool, remote string) ([]byte, error)
-}
 
 type Server struct {
 	config.ServerConfig
 	addr       string
-	handler    Handler
+	handler    handlers.Handler
 	readerType ReaderType
 }
 
 func NewServer(
 	cfg config.ServerConfig,
-	handler Handler,
+	handler handlers.Handler,
 	readerType ReaderType,
 ) Server {
 	addr := fmt.Sprintf("%s:%d", cfg.Host, cfg.Port)

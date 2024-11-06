@@ -1,4 +1,4 @@
-package prime
+package handlers
 
 import (
 	"encoding/json"
