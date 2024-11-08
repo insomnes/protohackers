@@ -176,6 +176,9 @@ func (b *BST) Insert(qts int32, val int32) {
 
 func (b *BST) Search(from, to int32) []int32 {
 	result := make([]int32, 0)
+	if b.root == nil {
+		return make([]int32, 0)
+	}
 	toVisit := make([]*TreeNode, 0, b.valCnt)
 	toVisit = append(toVisit, b.root)
 
