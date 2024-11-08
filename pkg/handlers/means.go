@@ -52,6 +52,7 @@ func (mh *MeansMsgHandler) handleQuery(msg []byte) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+	fmt.Println("Querying", query.from, query.to)
 	all := mh.db.Search(query.from, query.to)
 	if len(all) == 0 {
 		return []byte{0, 0, 0, 0}, nil
@@ -74,6 +75,7 @@ func (mh *MeansMsgHandler) handleInsert(msg []byte) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+	fmt.Println("Inserting", insert.ts, insert.value)
 	mh.db.Insert(insert.ts, insert.value)
 	return nil, nil
 }
