@@ -61,7 +61,13 @@ func (mh *MeansMsgHandler) handleQuery(msg []byte) ([]byte, error) {
 	for _, v := range all {
 		sum += v
 	}
+	if mh.verbose {
+		fmt.Println("Sum:", sum)
+	}
 	mean := sum / int32(len(all))
+	if mh.verbose {
+		fmt.Println("Mean:", mean)
+	}
 	buf := new(bytes.Buffer)
 	err = binary.Write(buf, binary.LittleEndian, mean)
 	if err != nil {
