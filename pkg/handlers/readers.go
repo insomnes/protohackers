@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"bufio"
+	"io"
 	"net"
 )
 
@@ -35,14 +36,19 @@ func (l *LineReader) ReadMessage() ([]byte, error) {
 }
 
 type NBytesReader struct {
-	bufr *bufio.Reader
+	conn net.Conn
+	buf  []byte
 	n    int
 }
 
 func NewNBytesReader(conn net.Conn, n int) NBytesReader {
-	return NBytesReader{bufr: bufio.NewReader(conn), n: n}
+	buf := make([]byte, n)
+	return NBytesReader{buf: buf, n: n}
 }
 
 func (n *NBytesReader) ReadMessage() ([]byte, error) {
-	return n.bufr.Peek(n.n)
+	if _, err := io.ReadFull(n.conn, n.buf); err != nil {
+		return nil, err
+	}
+	return n.buf, nil
 }
