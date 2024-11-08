@@ -36,7 +36,7 @@ func NewMeansMsgHandler(verbose bool, remote string) *MeansMsgHandler {
 
 func (mh *MeansMsgHandler) HandleMessage(msg []byte) ([]byte, error) {
 	if mh.verbose {
-		fmt.Printf(mh.remote, "->Parsing message: %v\n", msg)
+		fmt.Printf("%s->Parsing message: %v\n", mh.remote, msg)
 	}
 	msgType := msg[0]
 	switch msgType {
