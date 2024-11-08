@@ -28,7 +28,7 @@ type MeansMsgHandler struct {
 func NewMeansMsgHandler(verbose bool) *MeansMsgHandler {
 	return &MeansMsgHandler{
 		verbose: verbose,
-		db:      &BST{},
+		db:      &BST{root: nil},
 	}
 }
 
