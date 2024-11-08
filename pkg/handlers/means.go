@@ -29,7 +29,7 @@ type MeansMsgHandler struct {
 func NewMeansMsgHandler(verbose bool, remote string) *MeansMsgHandler {
 	return &MeansMsgHandler{
 		verbose: verbose,
-		db:      &BST{root: nil},
+		db:      &BST{root: nil, valCnt: 0},
 		remote:  remote,
 	}
 }
@@ -143,15 +143,17 @@ func parseData(in []byte) ([2]int32, error) {
 }
 
 type BST struct {
-	root *TreeNode
+	root   *TreeNode
+	valCnt uint32
 }
 
-func (b *BST) Insert(qts int32, val int32) error {
+func (b *BST) Insert(qts int32, val int32) {
+	b.valCnt += 1
 	valNode := &TreeNode{qts: qts, val: val}
 	current := b.root
 	if current == nil {
 		b.root = valNode
-		return nil
+		return
 	}
 	for {
 		if qts < current.qts {
@@ -168,21 +170,27 @@ func (b *BST) Insert(qts int32, val int32) error {
 			current = current.right
 		}
 	}
-	return nil
 }
 
 func (b *BST) Search(from, to int32) []int32 {
-	current := b.root
 	result := make([]int32, 0)
-	for current != nil {
+	toVisit := make([]*TreeNode, 0, b.valCnt)
+	toVisit = append(toVisit, b.root)
+
+	for len(toVisit) > 0 {
+		current := toVisit[0]
+
+		toVisit = toVisit[1:]
 		if current.qts >= from && current.qts <= to {
 			result = append(result, current.val)
 		}
-		if current.qts > from {
-			current = current.left
-		} else {
-			current = current.right
+		if current.left != nil && current.qts > from {
+			toVisit = append(toVisit, current.left)
 		}
+		if current.right != nil && current.qts < to {
+			toVisit = append(toVisit, current.right)
+		}
+
 	}
 	return result
 }
