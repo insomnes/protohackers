@@ -41,7 +41,7 @@ type NBytesReader struct {
 }
 
 func NewNBytesReader(conn net.Conn, n int) NBytesReader {
-	return NBytesReader{n: n}
+	return NBytesReader{conn: conn, n: n}
 }
 
 func (n *NBytesReader) ReadMessage() ([]byte, error) {
