@@ -1,8 +1,6 @@
 package handlers
 
 import (
-	"bytes"
-	"encoding/binary"
 	"fmt"
 	"net"
 
@@ -73,12 +71,13 @@ func (mh *MeansMsgHandler) handleQuery(msg []byte) ([]byte, error) {
 	if mh.verbose {
 		fmt.Println("Mean:", mean)
 	}
-	buf := new(bytes.Buffer)
-	err = binary.Write(buf, binary.BigEndian, mean)
-	if err != nil {
-		return nil, err
-	}
-	return buf.Bytes(), nil
+	buf := make([]byte, 4)
+	buf[0] = byte(mean >> 24)
+	buf[1] = byte(mean >> 16)
+	buf[2] = byte(mean >> 8)
+	buf[3] = byte(mean)
+
+	return buf, nil
 }
 
 func (mh *MeansMsgHandler) handleInsert(msg []byte) ([]byte, error) {
