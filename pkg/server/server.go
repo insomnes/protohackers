@@ -85,6 +85,9 @@ func (s *Server) handleConnection(conn net.Conn) {
 			fmt.Fprintln(os.Stderr, "Error handling message:", err)
 			return
 		}
+		if resp == nil {
+			continue
+		}
 
 		conn.SetWriteDeadline(time.Now().Add(s.WriteTimeout))
 		if _, err := conn.Write(resp); err != nil {

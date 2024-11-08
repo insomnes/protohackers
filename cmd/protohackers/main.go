@@ -12,6 +12,7 @@ import (
 var handlerMap = map[string]server.ConnHandler{
 	"echo":  &handlers.EchoHandler{},
 	"prime": &handlers.PrimeHandler{},
+	"means": &handlers.MeansHandler{},
 }
 
 func main() {

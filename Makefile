@@ -9,3 +9,6 @@ echo: build
 
 prime: build
 	./bin/protohackers --handler=prime --host=$(HOST) --port=$(PORT) --verbose
+
+means: build
+	./bin/protohackers --handler=means --host=$(HOST) --port=$(PORT) --verbose
