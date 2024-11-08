@@ -52,6 +52,9 @@ func (mh *MeansMsgHandler) HandleMessage(msg []byte) ([]byte, error) {
 func (mh *MeansMsgHandler) handleQuery(msg []byte) ([]byte, error) {
 	query, err := parseQuery(msg)
 	if err != nil {
+		if err.Error() == "invalid range" {
+			return []byte{0, 0, 0, 0}, nil
+		}
 		return nil, err
 	}
 	fmt.Println(mh.remote, "->Querying", query.from, query.to)
