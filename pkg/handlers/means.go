@@ -60,14 +60,14 @@ func (mh *MeansMsgHandler) handleQuery(msg []byte) ([]byte, error) {
 	if len(all) == 0 {
 		return []byte{0, 0, 0, 0}, nil
 	}
-	sum := int32(0)
+	sum := 0
 	for _, v := range all {
-		sum += v
+		sum += int(v)
 	}
 	if mh.verbose {
 		fmt.Println(mh.remote, "->Sum:", sum)
 	}
-	mean := sum / int32(len(all))
+	mean := sum / len(all)
 	if mh.verbose {
 		fmt.Println("Mean:", mean)
 	}
