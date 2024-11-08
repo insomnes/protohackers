@@ -69,7 +69,7 @@ func (mh *MeansMsgHandler) handleQuery(msg []byte) ([]byte, error) {
 		fmt.Println("Mean:", mean)
 	}
 	buf := new(bytes.Buffer)
-	err = binary.Write(buf, binary.LittleEndian, mean)
+	err = binary.Write(buf, binary.BigEndian, mean)
 	if err != nil {
 		return nil, err
 	}
