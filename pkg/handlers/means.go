@@ -17,7 +17,7 @@ func (mh *MeansHandler) GetReader(conn net.Conn) server.MsgReader {
 }
 
 func (mh *MeansHandler) GetMsgHandler(conn net.Conn, verbose bool) server.MsgHandler {
-	return &MeansMsgHandler{verbose: verbose}
+	return NewMeansMsgHandler(verbose)
 }
 
 type MeansMsgHandler struct {
