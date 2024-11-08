@@ -37,18 +37,18 @@ func (l *LineReader) ReadMessage() ([]byte, error) {
 
 type NBytesReader struct {
 	conn net.Conn
-	buf  []byte
 	n    int
 }
 
 func NewNBytesReader(conn net.Conn, n int) NBytesReader {
-	buf := make([]byte, n)
-	return NBytesReader{buf: buf, n: n}
+	return NBytesReader{n: n}
 }
 
 func (n *NBytesReader) ReadMessage() ([]byte, error) {
-	if _, err := io.ReadFull(n.conn, n.buf); err != nil {
+	buf := make([]byte, n.n)
+
+	if _, err := io.ReadFull(n.conn, buf); err != nil {
 		return nil, err
 	}
-	return n.buf, nil
+	return buf, nil
 }
