@@ -17,24 +17,26 @@ func (mh *MeansHandler) GetReader(conn net.Conn) server.MsgReader {
 }
 
 func (mh *MeansHandler) GetMsgHandler(conn net.Conn, verbose bool) server.MsgHandler {
-	return NewMeansMsgHandler(verbose)
+	return NewMeansMsgHandler(verbose, conn.RemoteAddr().String())
 }
 
 type MeansMsgHandler struct {
 	verbose bool
 	db      *BST
+	remote  string
 }
 
-func NewMeansMsgHandler(verbose bool) *MeansMsgHandler {
+func NewMeansMsgHandler(verbose bool, remote string) *MeansMsgHandler {
 	return &MeansMsgHandler{
 		verbose: verbose,
 		db:      &BST{root: nil},
+		remote:  remote,
 	}
 }
 
 func (mh *MeansMsgHandler) HandleMessage(msg []byte) ([]byte, error) {
 	if mh.verbose {
-		fmt.Printf("Parsing message: %v\n", msg)
+		fmt.Printf(mh.remote, "->Parsing message: %v\n", msg)
 	}
 	msgType := msg[0]
 	switch msgType {
@@ -52,7 +54,7 @@ func (mh *MeansMsgHandler) handleQuery(msg []byte) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println("Querying", query.from, query.to)
+	fmt.Println(mh.remote, "->Querying", query.from, query.to)
 	all := mh.db.Search(query.from, query.to)
 	if len(all) == 0 {
 		return []byte{0, 0, 0, 0}, nil
@@ -62,7 +64,7 @@ func (mh *MeansMsgHandler) handleQuery(msg []byte) ([]byte, error) {
 		sum += v
 	}
 	if mh.verbose {
-		fmt.Println("Sum:", sum)
+		fmt.Println(mh.remote, "->Sum:", sum)
 	}
 	mean := sum / int32(len(all))
 	if mh.verbose {
@@ -81,7 +83,7 @@ func (mh *MeansMsgHandler) handleInsert(msg []byte) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println("Inserting", insert.ts, insert.value)
+	fmt.Println(mh.remote, "->Inserting", insert.ts, insert.value)
 	mh.db.Insert(insert.ts, insert.value)
 	return nil, nil
 }
