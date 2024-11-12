@@ -3,6 +3,7 @@ PORT=9999
 
 build:
 	go build -o bin/protohackers cmd/protohackers/main.go
+	go build -o bin/phchat cmd/phchat/main.go
 
 echo: build
 	./bin/protohackers --handler=echo --host=$(HOST) --port=$(PORT) --verbose
