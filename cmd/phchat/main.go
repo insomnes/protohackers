@@ -15,7 +15,9 @@ const (
 func main() {
 	host := flag.String("host", defaultHost, "address to listen on")
 	port := flag.Uint("port", defaultPort, "port to listen on 1-65535")
+	flag.Parse()
 	address := fmt.Sprintf("%s:%d", *host, *port)
+	fmt.Println("address:", address)
 	chatServer := chat.NewChatServer(address)
 	chatServer.Run()
 }
