@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"net"
+	"time"
 )
 
 //     Supervisor
@@ -18,12 +19,12 @@ type User struct {
 	ActorBase
 }
 
-func NewUserOut(conn net.Conn, userId string, chatRoom *ChatRoom) User {
+func NewUser(conn net.Conn, userId string, chatRoom *ChatRoom) User {
 	return User{
 		id:        userId,
 		conn:      conn,
 		chatRoom:  chatRoom,
-		ActorBase: *NewActorBase("User"),
+		ActorBase: *NewActorBase(fmt.Sprintf("User[%s]", userId)),
 	}
 }
 
@@ -46,6 +47,7 @@ func (u *User) send(msg string) {
 }
 
 func (u *User) receive() {
+	u.conn.SetReadDeadline(time.Now().Add(1 * time.Minute))
 	reader := bufio.NewReader(u.conn)
 	for {
 		msg, err := reader.ReadString('\n')

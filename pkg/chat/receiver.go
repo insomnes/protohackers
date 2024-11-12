@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"net"
+	"time"
 	"unicode"
 )
 
@@ -22,40 +23,46 @@ func NewReceiver(chatRoom *ChatRoom) *Receiver {
 
 func (r *Receiver) CheckConnection(conn net.Conn) {
 	r.actQ <- func() {
-		go r.checkConnection(conn)
+		r.checkConnection(conn)
 	}
 }
 
 func (r *Receiver) checkConnection(conn net.Conn) {
 	fmt.Printf("Checking connection for %s\n", conn.RemoteAddr())
-	var err error
-	defer func() {
-		if err != nil {
-			fmt.Fprintln(conn, err.Error())
-			conn.Close()
-		}
-	}()
 
 	if _, err := fmt.Fprintln(conn, "Welcome to chat! What is your name?"); err != nil {
+		fmt.Fprintln(conn, err.Error())
+		conn.Close()
 		return
 	}
+	go r.receiveUserName(conn)
+}
 
-	var userName string
+func (r *Receiver) receiveUserName(conn net.Conn) {
+	conn.SetReadDeadline(time.Now().Add(1 * time.Minute))
 	reader := bufio.NewReader(conn)
-	userName, err = reader.ReadString('\n')
+	userName, err := reader.ReadString('\n')
 	if err != nil {
+		conn.Close()
 		return
 	}
 	userName = userName[:len(userName)-1]
+	r.AddUserToChat(conn, userName)
+}
 
-	if err = validateUserName(userName); err != nil {
-		return
+func (r *Receiver) AddUserToChat(conn net.Conn, userName string) error {
+	notifyError := make(chan error, 0)
+	r.actQ <- func() {
+		notifyError <- r.addUserToChat(conn, userName)
 	}
+	return <-notifyError
+}
 
-	if err = r.chatRoom.AddUser(conn, userName); err != nil {
-		return
+func (r *Receiver) addUserToChat(conn net.Conn, userName string) error {
+	if err := validateUserName(userName); err != nil {
+		return err
 	}
-	fmt.Printf("User %s joined\n", userName)
+	return r.chatRoom.AddUser(conn, userName)
 }
 
 func (r *Receiver) Stop() {

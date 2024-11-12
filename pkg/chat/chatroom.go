@@ -42,7 +42,7 @@ func (c *ChatRoom) AddUser(conn net.Conn, userId string) error {
 		notifyError <- nil
 		text := fmt.Sprintf("%s joined", userId)
 		c.broadcast(ChatMessage{From: "", Text: text})
-		user := NewUserOut(conn, userId, c)
+		user := NewUser(conn, userId, c)
 		c.addUser(&user)
 	}
 	return <-notifyError
@@ -62,6 +62,7 @@ func (c *ChatRoom) addUser(user *User) {
 	}
 	user.Send(builder.String())
 	c.users[user.id] = user
+	fmt.Printf("User %s added\n", user.id)
 }
 
 func (c *ChatRoom) RemoveUser(userId string) {
