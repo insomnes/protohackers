@@ -55,6 +55,7 @@ func (r *Receiver) checkConnection(conn net.Conn) {
 	if err = r.chatRoom.AddUser(conn, userName); err != nil {
 		return
 	}
+	fmt.Printf("User %s joined\n", userName)
 }
 
 func (r *Receiver) Stop() {
