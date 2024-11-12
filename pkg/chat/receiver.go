@@ -22,7 +22,7 @@ func NewReceiver(chatRoom *ChatRoom) *Receiver {
 
 func (r *Receiver) CheckConnection(conn net.Conn) {
 	r.actQ <- func() {
-		r.checkConnection(conn)
+		go r.checkConnection(conn)
 	}
 }
 

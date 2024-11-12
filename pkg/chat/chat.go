@@ -42,6 +42,7 @@ func (cs *ChatServer) Run() {
 				fmt.Println("Error accepting connection:", err)
 				return
 			}
+			fmt.Printf("Accepted connection from %s\n", conn.RemoteAddr())
 			receiver.CheckConnection(conn)
 		}
 	}()
