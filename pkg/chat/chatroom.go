@@ -1,107 +1,103 @@
 package chat
 
 import (
+	"context"
 	"fmt"
-	"net"
+	"log"
 	"strings"
 )
 
-type ChatMessage struct {
+type ChatRoom struct {
+	users map[string]*User
+
+	join     chan *Guest
+	messages chan Message
+	userFail chan UserError
+}
+
+func NewChatRoom() ChatRoom {
+	return ChatRoom{
+		users:    make(map[string]*User),
+		join:     make(chan *Guest, EventChannelSize),
+		messages: make(chan Message, EventChannelSize),
+		userFail: make(chan UserError, EventChannelSize),
+	}
+}
+
+func (cr *ChatRoom) Run(ctx context.Context) {
+	log.Println("ChatRoom started")
+	chatRoomCtx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	for {
+		select {
+		case <-ctx.Done():
+			log.Println("ChatRoom stopped")
+			return
+		case guest := <-cr.join:
+			cr.handleGuest(chatRoomCtx, guest)
+		case message := <-cr.messages:
+			cr.handleMessage(message)
+		case err := <-cr.userFail:
+			cr.handleUserError(err)
+		}
+	}
+}
+
+func (cr *ChatRoom) AddGuest(guest *Guest) {
+	cr.join <- guest
+}
+
+func (cr *ChatRoom) handleGuest(ctx context.Context, guest *Guest) {
+	log.Printf("Guest %s joined, checking name [%s]", guest.Conn.RemoteAddr(), guest.Name)
+
+	if _, present := cr.users[guest.Name]; present {
+		guest.Reject("Name already taken. Sorry.")
+		return
+	}
+	user := NewUser(guest.Conn, guest.Name)
+
+	go user.Run(ctx, cr.messages, cr.userFail)
+
+	cr.notifyAboutNewUser(&user)
+	cr.users[user.Name] = &user
+}
+
+func (cr *ChatRoom) notifyAboutNewUser(user *User) {
+	cr.handleMessage(Message{Text: fmt.Sprintf("%s joined", user.Name)})
+
+	sb := strings.Builder{}
+	sb.WriteString("* Users in chatroom: ")
+	for name := range cr.users {
+		sb.WriteString(name)
+		sb.WriteString(" ")
+	}
+	user.Send(sb.String())
+}
+
+func (cr *ChatRoom) handleMessage(message Message) {
+	log.Println("Message:", message.String())
+	for _, user := range cr.users {
+		if user.Name == message.From {
+			continue
+		}
+		user.Send(message.String())
+	}
+}
+
+func (cr *ChatRoom) handleUserError(err UserError) {
+	delete(cr.users, err.Name)
+	cr.handleMessage(Message{Text: fmt.Sprintf("%s left", err.Name)})
+}
+
+type Message struct {
 	From string
 	Text string
 }
 
-func (cm ChatMessage) String() string {
-	if cm.From == "" {
-		return fmt.Sprintf("* %s", cm.Text)
+func (m Message) String() string {
+	if m.From == "" {
+		return fmt.Sprintf("* %s", m.Text)
 	}
-	return fmt.Sprintf("[%s] %s", cm.From, cm.Text)
-}
-
-type ChatRoom struct {
-	ActorBase
-	users map[string]*User
-}
-
-func NewChatRoom() *ChatRoom {
-	return &ChatRoom{
-		ActorBase: *NewActorBase("ChatRoom"),
-		users:     make(map[string]*User),
-	}
-}
-
-func (c *ChatRoom) AddUser(conn net.Conn, userId string) error {
-	notifyError := make(chan error, 0)
-	// Broadcast the message first, then add the user. This is to not send
-	// the message to the user that is joining.
-	c.actQ <- func() {
-		if _, userExists := c.users[userId]; userExists {
-			notifyError <- fmt.Errorf("User %s already exists", userId)
-			return
-		}
-		notifyError <- nil
-		text := fmt.Sprintf("%s joined", userId)
-		c.broadcast(ChatMessage{From: "", Text: text})
-		user := NewUser(conn, userId, c)
-		c.addUser(&user)
-	}
-	return <-notifyError
-}
-
-func (c *ChatRoom) addUser(user *User) {
-	go user.Run()
-	var builder strings.Builder
-	builder.WriteString("* Users in chat:")
-	i := 0
-	for _, user := range c.users {
-		if i > 0 {
-			builder.WriteString(",")
-		}
-		builder.WriteString(fmt.Sprintf(" %s", user.id))
-		i++
-	}
-	user.Send(builder.String())
-	c.users[user.id] = user
-	fmt.Printf("User %s added\n", user.id)
-}
-
-func (c *ChatRoom) RemoveUser(userId string) {
-	// Delete the user first, then broadcast the message. This is to not send
-	// the message to the user which has left.
-	c.actQ <- func() {
-		if _, userExists := c.users[userId]; !userExists {
-			return
-		}
-		delete(c.users, userId)
-		text := fmt.Sprintf("%s left", userId)
-		c.broadcast(ChatMessage{From: "", Text: text})
-	}
-}
-
-func (c *ChatRoom) Broadcast(msg ChatMessage) {
-	c.actQ <- func() {
-		c.broadcast(msg)
-	}
-}
-
-func (c *ChatRoom) broadcast(msg ChatMessage) {
-	text := msg.String()
-	for _, user := range c.users {
-		if user.id == msg.From {
-			continue
-		}
-		user.Send(text)
-	}
-}
-
-func (c *ChatRoom) Stop() {
-	if c.stopped {
-		return
-	}
-	for _, user := range c.users {
-		user.Stop()
-	}
-	c.StopActor()
-
-	fmt.Printf("ChatRoom stopped\n")
+	return fmt.Sprintf("[%s] %s", m.From, m.Text)
 }

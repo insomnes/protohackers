@@ -2,72 +2,102 @@ package chat
 
 import (
 	"bufio"
+	"context"
 	"fmt"
+	"log"
 	"net"
-	"time"
 )
 
-//     Supervisor
-//    / del    \ error
-// ChatRoom -> User
+type UserError struct {
+	Addr string
+	Name string
+	Err  error
+}
+
+func (ue UserError) Error() string {
+	return fmt.Sprintf("user [%s] (%s) error: %v", ue.Name, ue.Addr, ue.Err)
+}
 
 type User struct {
-	id       string
-	conn     net.Conn
-	chatRoom *ChatRoom
+	Address string
+	Name    string
 
-	ActorBase
+	rxChan chan Message
+	txChan chan string
+
+	conn net.Conn
 }
 
-func NewUser(conn net.Conn, userId string, chatRoom *ChatRoom) User {
+func NewUser(conn net.Conn, name string) User {
 	return User{
-		id:        userId,
-		conn:      conn,
-		chatRoom:  chatRoom,
-		ActorBase: *NewActorBase(fmt.Sprintf("User[%s]", userId)),
+		Address: conn.RemoteAddr().String(),
+		Name:    name,
+		rxChan:  make(chan Message, EventChannelSize),
+		txChan:  make(chan string, EventChannelSize),
+		conn:    conn,
 	}
 }
 
-func (u *User) Run() {
-	go u.receive()
-	u.ActorBase.Run()
-}
+func (u *User) Run(ctx context.Context, messages chan<- Message, fail chan<- UserError) {
+	userCtx, cancel := context.WithCancel(ctx)
+	defer cancel()
+	defer u.conn.Close()
 
-func (u *User) Send(msg string) {
-	u.actQ <- func() {
-		u.send(msg)
-	}
-}
+	userFail := make(chan UserError, EventChannelSize)
+	go u.runRX(userFail, messages)
+	go u.runTX(userCtx, userFail)
 
-func (u *User) send(msg string) {
-	if _, err := fmt.Fprintln(u.conn, msg); err != nil {
-		u.chatRoom.RemoveUser(u.id)
-		u.Stop()
-	}
-}
-
-func (u *User) receive() {
-	u.conn.SetReadDeadline(time.Now().Add(1 * time.Minute))
-	reader := bufio.NewReader(u.conn)
-	for {
-		msg, err := reader.ReadString('\n')
-		if err != nil {
-			break
-		}
-		u.chatRoom.Broadcast(ChatMessage{From: u.id, Text: msg[:len(msg)-1]})
-	}
-	fmt.Printf("User %s left\n", u.id)
-	u.chatRoom.RemoveUser(u.id)
-	u.Stop()
-}
-
-func (u *User) Stop() {
-	if u.stopped {
+	select {
+	case <-ctx.Done():
+		log.Printf("External stop for [%s] (%s)\n", u.Name, u.Address)
+		return
+	case err := <-userFail:
+		log.Println("Stopping", err.Error())
+		fail <- err
 		return
 	}
+}
 
-	u.StopActor()
-	u.conn.Close()
+func (u *User) Send(text string) {
+	u.txChan <- text
+}
 
-	fmt.Printf("User %s conn closed\n", u.id)
+func (u *User) runRX(fail chan<- UserError, messages chan<- Message) {
+	reader := bufio.NewReader(u.conn)
+	for {
+		text, err := reader.ReadString('\n')
+		if err != nil {
+			log.Printf("User can not read from %s: %v\n", u.Address, err)
+			fail <- u.NewError(err)
+			return
+		}
+		messages <- Message{
+			From: u.Name,
+			Text: text[:len(text)-1],
+		}
+	}
+}
+
+func (u *User) runTX(ctx context.Context, fail chan<- UserError) {
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case text := <-u.txChan:
+			_, err := u.conn.Write([]byte(text + "\n"))
+			if err != nil {
+				log.Printf("Error writing to %s: %v\n", u.Address, err)
+				fail <- u.NewError(err)
+				return
+			}
+		}
+	}
+}
+
+func (u *User) NewError(err error) UserError {
+	return UserError{
+		Addr: u.Address,
+		Name: u.Name,
+		Err:  err,
+	}
 }

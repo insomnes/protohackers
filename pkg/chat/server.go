@@ -1,19 +1,23 @@
 package chat
 
 import (
-	"fmt"
+	"context"
+	"log"
 	"net"
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 )
+
+const EventChannelSize = 16
 
 type ChatServer struct {
 	Address string
 }
 
-func NewChatServer(address string) *ChatServer {
-	return &ChatServer{
+func NewChatServer(address string) ChatServer {
+	return ChatServer{
 		Address: address,
 	}
 }
@@ -28,10 +32,11 @@ func (cs *ChatServer) Run() {
 	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
 
 	chatRoom := NewChatRoom()
-	receiver := NewReceiver(chatRoom)
-	director := NewDirector(chatRoom, receiver)
-	director.Run()
-	defer director.Stop()
+	butler := NewButler(&chatRoom)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	go chatRoom.Run(ctx)
+	go butler.Run(ctx)
 
 	go func() {
 		defer ln.Close()
@@ -39,14 +44,16 @@ func (cs *ChatServer) Run() {
 		for {
 			conn, err := ln.Accept()
 			if err != nil {
-				fmt.Println("Error accepting connection:", err)
+				log.Println("Error accepting connection:", err)
 				return
 			}
-			fmt.Printf("Accepted connection from %s\n", conn.RemoteAddr())
-			receiver.CheckConnection(conn)
+			log.Printf("Connection from %s\n", conn.RemoteAddr())
+			butler.AddConnection(conn)
 		}
 	}()
 
 	sig := <-sigChan
-	fmt.Printf("Signal received: %v\n", sig)
+	log.Printf("Signal received: %v\n", sig)
+	cancel()
+	<-time.After(1 * time.Second)
 }
