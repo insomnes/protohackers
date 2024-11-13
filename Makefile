@@ -13,3 +13,6 @@ prime: build
 
 means: build
 	./bin/protohackers --handler=means --host=$(HOST) --port=$(PORT) --verbose
+
+chat: build
+	./bin/phchat --host=$(HOST) --port=$(PORT)
