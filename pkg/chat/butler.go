@@ -134,7 +134,7 @@ func validateName(name string) error {
 		return fmt.Errorf("name cannot be empty")
 	}
 	if len(name) > 20 {
-		return fmt.Errorf("name cannot be longer than 32 characters")
+		return fmt.Errorf("name cannot be longer than 20 characters")
 	}
 	for _, c := range name {
 		if !unicode.IsLetter(c) && !unicode.IsDigit(c) {
