@@ -68,7 +68,9 @@ func (cs *KVServer) readData(conn *net.UDPConn) {
 			break
 		}
 
-		cs.db.QueueQuery(QueryFromBytes(data[:n], *addr))
+		go func() {
+			cs.db.QueueQuery(QueryFromBytes(data[:n], *addr))
+		}()
 	}
 }
 
@@ -80,7 +82,14 @@ func (cs *KVServer) processResults(ctx context.Context, conn *net.UDPConn, resul
 			log.Println("Results agent shutting down")
 			return
 		case res := <-results:
-			conn.WriteToUDP(res.Bytes(), &res.To)
+			go sendResponse(conn, res)
 		}
+	}
+}
+
+func sendResponse(conn *net.UDPConn, res Response) {
+	_, err := conn.WriteToUDP(res.Bytes(), &res.To)
+	if err != nil {
+		log.Printf("Error sending response to %s: %v", &res.To, err)
 	}
 }
