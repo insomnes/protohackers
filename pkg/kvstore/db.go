@@ -57,7 +57,6 @@ func QueryFromBytes(b []byte, from net.UDPAddr) Query {
 	if offset != -1 {
 		return NewQuery(Insert, key, string(b[offset:]), from)
 	}
-	log.Printf("Key %s, offset %d\n", key, offset)
 
 	if key == versionKey {
 		qType = VersionReq
