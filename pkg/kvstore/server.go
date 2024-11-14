@@ -68,9 +68,7 @@ func (cs *KVServer) readData(conn *net.UDPConn) {
 			break
 		}
 
-		go func() {
-			cs.db.QueueQuery(QueryFromBytes(data[:n], *addr))
-		}()
+		cs.db.QueueQuery(QueryFromBytes(data[:n], *addr))
 	}
 }
 
