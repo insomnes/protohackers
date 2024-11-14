@@ -4,6 +4,7 @@ PORT=9999
 build:
 	go build -o bin/protohackers cmd/protohackers/main.go
 	go build -o bin/phchat cmd/phchat/main.go
+	go build -o bin/phkv cmd/phkv/main.go
 
 echo: build
 	./bin/protohackers --handler=echo --host=$(HOST) --port=$(PORT) --verbose
@@ -16,3 +17,6 @@ means: build
 
 chat: build
 	./bin/phchat --host=$(HOST) --port=$(PORT)
+
+kv: build
+	./bin/phkv --host=$(HOST) --port=$(PORT)
