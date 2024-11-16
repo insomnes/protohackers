@@ -10,9 +10,8 @@ import (
 )
 
 const (
-	chatAddr      string = "chat.protohackers.com:16963"
-	tonyWallet    string = "7YWHMfk9JZe0LM0g1ZauHuiSxhI"
-	walletPattern string = `(?:^|\s)(7[a-zA-Z0-9]{25,34})(?:$|[\s\n])`
+	tonyWallet    string = `${1}7YWHMfk9JZe0LM0g1ZauHuiSxhI${3}`
+	walletPattern string = `(^|\s)(7[a-zA-Z0-9]{25,34})($|[\s\n])`
 )
 
 var re *regexp.Regexp = regexp.MustCompile(walletPattern)
@@ -21,16 +20,16 @@ func tonyWalletFix(text string) string {
 	return re.ReplaceAllString(text, tonyWallet)
 }
 
-func RunMitmProxy(ctx context.Context, conn net.Conn) {
+func RunMitmProxy(ctx context.Context, conn net.Conn, chatAddr string) {
 	userCtx, cancel := context.WithCancel(ctx)
 	defer cancel()
 	defer conn.Close()
-	defer log.Printf("Mitm proxy for %s closed", conn.LocalAddr().String())
+	defer log.Printf("Mitm proxy for %s closed", conn.RemoteAddr().String())
 
-	userConn := NewMitmConn(conn, conn.LocalAddr().String())
+	userConn := NewMitmConn(conn, conn.RemoteAddr().String())
 	userUp := make(chan string, EventChannelSize)
 
-	chatConn, err := createChatServerConn()
+	chatConn, err := createChatServerConn(chatAddr)
 	if err != nil {
 		log.Printf("Failed to create chat connection for %s: %v", userConn.Address, err)
 		return
@@ -67,7 +66,7 @@ func RunMitmProxy(ctx context.Context, conn net.Conn) {
 	}
 }
 
-func createChatServerConn() (MitmConn, error) {
+func createChatServerConn(chatAddr string) (MitmConn, error) {
 	srvTCPAddr, err := net.ResolveTCPAddr("tcp", chatAddr)
 	if err != nil {
 		return MitmConn{}, err

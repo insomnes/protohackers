@@ -13,12 +13,14 @@ import (
 const EventChannelSize = 16
 
 type MitmServer struct {
-	Address string
+	Address  string
+	ChatAddr string
 }
 
-func NewMitmServer(address string) MitmServer {
+func NewMitmServer(address string, chatAddr string) MitmServer {
 	return MitmServer{
-		Address: address,
+		Address:  address,
+		ChatAddr: chatAddr,
 	}
 }
 
@@ -43,7 +45,7 @@ func (ms *MitmServer) Run() {
 				return
 			}
 			log.Printf("Connection from %s\n", conn.RemoteAddr())
-			go RunMitmProxy(ctx, conn)
+			go RunMitmProxy(ctx, conn, ms.ChatAddr)
 		}
 	}()
 
