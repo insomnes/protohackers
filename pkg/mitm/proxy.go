@@ -7,17 +7,34 @@ import (
 	"log"
 	"net"
 	"regexp"
+	"strings"
 )
 
 const (
-	tonyWallet    string = `${1}7YWHMfk9JZe0LM0g1ZauHuiSxhI${3}`
-	walletPattern string = `(^|\s)(7[a-zA-Z0-9]{25,34})($|[\s\n])`
+	tonyWallet    string = "7YWHMfk9JZe0LM0g1ZauHuiSxhI"
+	walletPattern string = `(^|[\s])(7[a-zA-Z0-9]{25,34})($|[\s\n])`
 )
 
 var re *regexp.Regexp = regexp.MustCompile(walletPattern)
 
 func tonyWalletFix(text string) string {
-	return re.ReplaceAllString(text, tonyWallet)
+	if !re.MatchString(text) {
+		return text
+	}
+	sSplit := strings.Split(text, " ")
+	builder := strings.Builder{}
+	for i, s := range sSplit {
+		if i != 0 {
+			builder.WriteRune(' ')
+		}
+		if !re.MatchString(s) {
+			builder.WriteString(s)
+			continue
+		}
+		builder.WriteString(tonyWallet)
+	}
+	builder.WriteRune('\n')
+	return builder.String()
 }
 
 func RunMitmProxy(ctx context.Context, conn net.Conn, chatAddr string) {
