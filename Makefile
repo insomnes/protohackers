@@ -5,6 +5,7 @@ build:
 	go build -o bin/protohackers cmd/protohackers/main.go
 	go build -o bin/phchat cmd/phchat/main.go
 	go build -o bin/phkv cmd/phkv/main.go
+	go build -o bin/phmitm cmd/phmitm/main.go
 
 echo: build
 	./bin/protohackers --handler=echo --host=$(HOST) --port=$(PORT) --verbose
@@ -20,3 +21,6 @@ chat: build
 
 kv: build
 	./bin/phkv --host=$(HOST) --port=$(PORT)
+
+mitm: build
+	./bin/phmitm --host=$(HOST) --port=$(PORT)
