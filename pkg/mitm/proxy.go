@@ -12,16 +12,13 @@ import (
 
 const (
 	tonyWallet    string = "7YWHMfk9JZe0LM0g1ZauHuiSxhI"
-	walletPattern string = `(^|[\s])(7[a-zA-Z0-9]{25,34})($|[\s\n])`
+	walletPattern string = `^(7[a-zA-Z0-9]{25,34})$`
 )
 
 var re *regexp.Regexp = regexp.MustCompile(walletPattern)
 
 func tonyWalletFix(text string) string {
-	if !re.MatchString(text) {
-		return text
-	}
-	sSplit := strings.Split(text, " ")
+	sSplit := strings.Split(text[:len(text)-1], " ")
 	builder := strings.Builder{}
 	for i, s := range sSplit {
 		if i != 0 {
